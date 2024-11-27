@@ -1,6 +1,6 @@
 # git-wait
 
-A simple wrapper utility around `git` that waits until `index.lock` file is no longer present before forward all the
+A simple wrapper utility around `git` that waits until `index.lock` file is no longer present before forwarding all the
 args to `git` and running the command.
 
 ## Usage
