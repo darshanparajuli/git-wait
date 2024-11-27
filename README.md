@@ -1,12 +1,13 @@
 # git-wait
 
 A simple wrapper utility around `git` that waits until `index.lock` file is no longer present before forwarding all the
-args to `git` and running the command.
+args to `git` and running the command. This is especially useful when there are potentially other git commands running
+on the same repo.
 
 ## Installation
 
 0. Ensure Rust is [installed](https://rustup.rs/).
-1. `cargo install git-wait`
+1. Run `cargo install git-wait`.
 
 ## Usage
 
