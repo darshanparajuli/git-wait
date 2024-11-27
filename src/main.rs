@@ -1,5 +1,4 @@
 use exec;
-use git2::Repository;
 use notify::event::RemoveKind;
 use notify::{Config, ErrorKind, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::io::{stdout, Write};
@@ -20,7 +19,7 @@ fn main() {
 
     // Find .git dir.
     let git_dir = find_git_directory(&dir)
-        .unwrap_or_else(|| report_error(format!("{} is not a git repository.", dir.display())));
+        .unwrap_or_else(|| report_error("Not a git repository.".to_string()));
 
     let timeout = if let Ok(timeout) = std::env::var(TIMEOUT_ENV_VAR) {
         let timeout = timeout.parse().unwrap_or_else(|e| {
@@ -31,19 +30,13 @@ fn main() {
         None
     };
 
-    // Ensure we're in a git repository.
-    let _ = Repository::open(&git_dir)
-        .unwrap_or_else(|_| report_error("Not a git repository.".to_string()));
-
     let mut args = std::env::args().collect::<Vec<_>>();
     args[0] = "git".to_string();
 
-    if has_index_lock(&git_dir) {
+    let index_lock_path = git_dir.join(INDEX_LOCK_NAME);
+    if index_lock_path.exists() {
         print!("Waiting on index.lock... ");
         stdout().flush().unwrap();
-
-        let mut index_lock_path = git_dir.clone();
-        index_lock_path.push(INDEX_LOCK_NAME);
         wait(&index_lock_path, timeout);
         println!("done!");
         run_git_cmd(&args);
@@ -72,12 +65,6 @@ fn find_git_directory(dir: &Path) -> Option<PathBuf> {
 fn run_git_cmd(args: &[String]) {
     let err = exec::execvp("git", args);
     report_error(format!("{}", err));
-}
-
-fn has_index_lock(git_dir: &Path) -> bool {
-    let mut p = git_dir.to_path_buf();
-    p.push(INDEX_LOCK_NAME);
-    p.exists()
 }
 
 fn wait(path: &Path, timeout: Option<Duration>) {

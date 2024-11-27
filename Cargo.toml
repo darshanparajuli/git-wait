@@ -1,6 +1,6 @@
 [package]
 name = "git-wait"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Darshan Parajuli <parajulidarshan@gmail.com>"]
 description = "A simple wrapper utility around git that waits until index.lock file is no longer present running the command."
@@ -11,6 +11,5 @@ categories = ["development-tools"]
 license = "MIT"
 
 [dependencies]
-git2 = "0.19.0"
 exec = "0.3.1"
 notify = "7.0.0"
