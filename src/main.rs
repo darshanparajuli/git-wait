@@ -11,6 +11,7 @@ use std::{env::current_dir, path::Path};
 
 const INDEX_LOCK_NAME: &'static str = "index.lock";
 const GIT_DIR_NAME: &'static str = ".git";
+const TIMEOUT_ENV_VAR: &'static str = "GIT_WAIT_TIMEOUT_MS";
 
 fn main() {
     // Get current dir.
@@ -21,7 +22,7 @@ fn main() {
     let git_dir = find_git_directory(&dir)
         .unwrap_or_else(|| report_error(format!("{} is not a git repository.", dir.display())));
 
-    let timeout = if let Ok(timeout) = std::env::var("GIT_WAIT_TIMEOUT") {
+    let timeout = if let Ok(timeout) = std::env::var(TIMEOUT_ENV_VAR) {
         let timeout = timeout.parse().unwrap_or_else(|e| {
             report_error(format!("timeout parse error: {}", e));
         });

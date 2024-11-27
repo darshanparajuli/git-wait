@@ -16,9 +16,24 @@ The set-it-and-forget-it approach:
 alias git=git-wait
 ```
 
+Timeout can be set by setting `GIT_WAIT_TIMEOUT_MS` env var. It is in milliseconds.
+
+```bash
+# 5-second timeout:
+$ GIT_WAIT_TIMEOUT_MS=5000 git-wait status
+```
+
 ## Example
 
 ```bash
 $ git-wait status
 $ git-wait push
+```
+
+When `index.lock` is present:
+
+```bash
+$ git-wait status
+Waiting on index.lock... done!
+<regular git status output>
 ```
