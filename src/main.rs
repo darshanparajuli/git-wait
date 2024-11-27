@@ -71,8 +71,6 @@ fn run_git_cmd(args: &[String]) {
 fn wait(path: &Path, timeout: Option<Duration>) {
     let (tx, rx) = mpsc::channel::<Event>();
 
-    // Automatically select the best implementation for your platform.
-    // You can also access each implementation directly e.g. INotifyWatcher.
     let mut watcher = RecommendedWatcher::new(
         move |res| {
             if let Ok(event) = res {
