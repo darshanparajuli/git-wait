@@ -1,0 +1,16 @@
+[package]
+name = "git-wait"
+version = "0.1.0"
+edition = "2021"
+authors = ["Darshan Parajuli <parajulidarshan@gmail.com>"]
+description = "TODO"
+repository = "https://github.com/darshanparajuli/git-wait"
+readme = "README.md"
+keywords = ["git"]
+categories = ["development-tools"]
+license = "MIT"
+
+[dependencies]
+git2 = "0.19.0"
+exec = "0.3.1"
+notify = "7.0.0"
