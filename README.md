@@ -3,6 +3,11 @@
 A simple wrapper utility around `git` that waits until `index.lock` file is no longer present before forwarding all the
 args to `git` and running the command.
 
+## Installation
+
+0. Ensure Rust is [installed](https://rustup.rs/).
+1. `cargo install git-wait`
+
 ## Usage
 
 ```
