@@ -17,29 +17,30 @@ fn main() {
     let dir = current_dir()
         .unwrap_or_else(|_| report_error("Unable to read current directory.".to_string()));
 
-    // Find .git dir.
-    let git_dir = find_git_directory(&dir)
-        .unwrap_or_else(|| report_error("Not a git repository.".to_string()));
-
-    let timeout = if let Ok(timeout) = std::env::var(TIMEOUT_ENV_VAR) {
-        let timeout = timeout.parse().unwrap_or_else(|e| {
-            report_error(format!("timeout parse error: {}", e));
-        });
-        Some(Duration::from_millis(timeout))
-    } else {
-        None
-    };
-
     let mut args = std::env::args().collect::<Vec<_>>();
     args[0] = "git".to_string();
 
-    let index_lock_path = git_dir.join(INDEX_LOCK_NAME);
-    if index_lock_path.exists() {
-        print!("Waiting on index.lock... ");
-        stdout().flush().unwrap();
-        wait(&index_lock_path, timeout);
-        println!("done!");
-        run_git_cmd(&args);
+    // Find .git dir.
+    if let Some(git_dir) = find_git_directory(&dir) {
+        let timeout = if let Ok(timeout) = std::env::var(TIMEOUT_ENV_VAR) {
+            let timeout = timeout.parse().unwrap_or_else(|e| {
+                report_error(format!("timeout parse error: {}", e));
+            });
+            Some(Duration::from_millis(timeout))
+        } else {
+            None
+        };
+
+        let index_lock_path = git_dir.join(INDEX_LOCK_NAME);
+        if index_lock_path.exists() {
+            print!("Waiting on index.lock... ");
+            stdout().flush().unwrap();
+            wait(&index_lock_path, timeout);
+            println!("done!");
+            run_git_cmd(&args);
+        } else {
+            run_git_cmd(&args);
+        }
     } else {
         run_git_cmd(&args);
     }
