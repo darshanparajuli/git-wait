@@ -1,12 +1,14 @@
-use exec;
+use errno::errno;
+use libc::execvp;
 use notify::event::RemoveKind;
 use notify::{Config, ErrorKind, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use std::ffi::CString;
 use std::io::{stdout, Write};
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::sync::mpsc::RecvTimeoutError;
 use std::time::Duration;
-use std::{env::current_dir, path::Path};
+use std::{env::current_dir, path::Path, ptr};
 
 const INDEX_LOCK_NAME: &'static str = "index.lock";
 const GIT_DIR_NAME: &'static str = ".git";
@@ -64,8 +66,25 @@ fn find_git_directory(dir: &Path) -> Option<PathBuf> {
 }
 
 fn run_git_cmd(args: &[String]) {
-    let err = exec::execvp("git", args);
-    report_error(format!("{}", err));
+    // Unwrapping is fine here since the first arg is "git".
+    let program_name = CString::new(args[0].as_bytes()).unwrap();
+
+    // Convert args to vec of `CString`s.
+    let args = args
+        .into_iter()
+        .map(|e| CString::new(e.as_bytes()))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap_or_else(|e| report_error(format!("invalid arg string: {}", e)));
+
+    // Convert args to `CString`s to vec of pointers.
+    let mut arg_ptrs = args.iter().map(|e| e.as_ptr()).collect::<Vec<_>>();
+    arg_ptrs.push(ptr::null());
+
+    // execvp only returns if there was an error.
+    let result = unsafe { execvp(program_name.as_ptr(), arg_ptrs.as_ptr()) };
+    if result == -1 {
+        report_error(format!("error executing git, code: {}", errno()));
+    }
 }
 
 fn wait(path: &Path, timeout: Option<Duration>) {
@@ -83,7 +102,7 @@ fn wait(path: &Path, timeout: Option<Duration>) {
         report_error(format!("Unable to initialize file watcher: {}", e));
     });
 
-    if let Err(e) = watcher.watch(path, RecursiveMode::Recursive) {
+    if let Err(e) = watcher.watch(path, RecursiveMode::NonRecursive) {
         match e.kind {
             ErrorKind::PathNotFound => {
                 // index.lock no longer exists at this point.
