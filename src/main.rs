@@ -21,18 +21,18 @@ fn main() {
         std::process::exit(1);
     });
 
-    if let Err(e) = run(&dir) {
+    if let Err(e) = run(dir) {
         eprintln!("ERROR: {}", e);
         std::process::exit(1);
     }
 }
 
-fn run(current_dir: &Path) -> Result<(), String> {
+fn run(mut dir: PathBuf) -> Result<(), String> {
     // Get current dir.
     let mut args = std::env::args().collect::<Vec<_>>();
     args[0] = "git".to_string();
     // Find .git dir.
-    if let Some(git_dir) = find_git_directory(&current_dir) {
+    if traverse_to_git_dir(&mut dir) {
         let timeout = if let Ok(timeout) = std::env::var(TIMEOUT_ENV_VAR) {
             let timeout = timeout
                 .parse()
@@ -42,7 +42,7 @@ fn run(current_dir: &Path) -> Result<(), String> {
             None
         };
 
-        let index_lock_path = git_dir.join(INDEX_LOCK_NAME);
+        let index_lock_path = dir.join(INDEX_LOCK_NAME);
         if index_lock_path.exists() {
             print!("waiting on index.lock... ");
             stdout().flush().unwrap();
@@ -57,19 +57,18 @@ fn run(current_dir: &Path) -> Result<(), String> {
     }
 }
 
-fn find_git_directory(dir: &Path) -> Option<PathBuf> {
-    let mut p = dir.to_path_buf();
+fn traverse_to_git_dir(dir: &mut PathBuf) -> bool {
     loop {
-        p.push(GIT_DIR_NAME);
-        if p.exists() {
-            return Some(p);
+        dir.push(GIT_DIR_NAME);
+        if dir.exists() {
+            return true;
         }
         // Pop ".git" we just pushed.
-        p.pop();
+        dir.pop();
 
         // Pop current dir, return if already at the top-level.
-        if !p.pop() {
-            break None;
+        if !dir.pop() {
+            break false;
         }
     }
 }
@@ -117,7 +116,7 @@ fn wait(path: &Path, timeout: Option<Duration>) -> Result<(), String> {
                 // index.lock no longer exists at this point.
                 Ok(())
             }
-            _ => Err(format!("nnable to watch index.lock: {}", e)),
+            _ => Err(format!("unable to watch index.lock: {}", e)),
         };
     }
 
