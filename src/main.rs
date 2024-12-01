@@ -49,7 +49,8 @@ fn maybe_wait_for_index_lock(mut args: Vec<String>) -> Result<Vec<String>, Strin
             Ok(args)
         }
     } else {
-        Err("git directory not found".to_string())
+        // Run the git command anyway!
+        Ok(args)
     }
 }
 
@@ -154,8 +155,9 @@ fn wait(path: &Path, timeout: Option<Duration>) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::maybe_wait_for_index_lock;
+    use crate::{maybe_wait_for_index_lock, traverse_to_git_dir};
     use lazy_static::lazy_static;
+    use std::env::current_dir;
     use std::fs::File;
     use std::path::{Path, PathBuf};
     use std::sync::mpsc::RecvTimeoutError;
@@ -174,18 +176,14 @@ mod tests {
     fn repo_with_git_dir_is_valid() {
         with_test_dir(|test_dir| {
             fs::create_dir(&test_dir.path.join(".git")).unwrap();
-            assert!(
-                maybe_wait_for_index_lock(vec!["git".to_string(), "status".to_string()]).is_ok()
-            )
+            assert!(traverse_to_git_dir(&mut current_dir().unwrap()));
         });
     }
 
     #[test]
     fn repo_without_git_dir_is_invalid() {
         with_test_dir(|_| {
-            assert!(
-                maybe_wait_for_index_lock(vec!["git".to_string(), "status".to_string()]).is_err()
-            );
+            assert!(!traverse_to_git_dir(&mut current_dir().unwrap()));
         });
     }
 
